@@ -15,19 +15,16 @@ function run(p: Uint8Array, inp: Uint8Array) {
     // validity: 00-07, 10-1e, 20-22, 30-34, 40-41, 50-53 (1f etc invalid)
     if (!((op <= 7) || (op >= 16 && op <= 30) || (op >= 32 && op <= 34) || (op >= 48 && op <= 52) || op === 64 || op === 65 || (op >= 80 && op <= 83))) return done(5);
     const imm = op === 1 ? 1 : op === 2 ? 4 : (op >= 48 && op <= 51) ? 2 : 0;
-    if (pc + imm >= n && imm > 0) return done(9);
-    if (imm === 0 && pc >= n) return done(9);
+    // immediate must fit before the program ends (imm 0 can never trigger: pc < n above)
+    if (pc + imm >= n) return done(9);
     // pops / pushes per opcode
     let pops = 0, pushes = 0;
     if (op === 3 || op === 4 || op === 23 || op === 27 || op === 64 || op === 80 || op === 81 || op === 83 || op === 49 || op === 50) pops = 1;
     else if (op === 5 || op === 6 || (op >= 16 && op <= 30) || (op >= 32 && op <= 34) || op === 65) pops = 2;
     else if (op === 7) pops = 3;
-    if (op === 1 || op === 2 || op === 52) pushes = 1;
-    else if (op === 4) pushes = 2;
-    else if (op === 5) pushes = 2;
-    else if (op === 6) pushes = 3;
-    else if (op === 7) pushes = 3;
-    else if ((op >= 16 && op <= 30) || (op >= 32 && op <= 34) || op === 23 || op === 27 || op === 64) pushes = 1;
+    if (op === 1 || op === 2 || op === 52 || (op >= 16 && op <= 34) || op === 64) pushes = 1;
+    else if (op === 4 || op === 5) pushes = 2;
+    else if (op === 6 || op === 7) pushes = 3;
     if (sp < pops) return done(2);
     if (sp - pops + pushes > 256) return done(3);
     steps++;
